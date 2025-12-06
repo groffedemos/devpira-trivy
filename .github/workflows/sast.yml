@@ -108,7 +108,10 @@ jobs:
           sudo apt-get install -y trivy
 
       - name: Testar execução do Trivy
-        run: trivy
+        run: |
+          trivy --version
+          echo ''
+          trivy
 
       - name: Criar o diretório results
         run: mkdir -p results
