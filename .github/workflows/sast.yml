@@ -139,9 +139,56 @@ jobs:
           category: trivy
         if: always()
 
+  dockerfile-scanning:
+    needs: dependency-scanning
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar o Checkov via pip
+        run: pip install checkov
+
+      - name: Testar a instalacao do Checkov
+        run: |
+          checkov
+          checkov --help
+
+      - name: Criar diretorio results
+        run: mkdir results
+
+      - name: Executar analise com o Checkov
+        run: |
+          echo 'Vulnerabilidades que serao ignoradas ao executar o Checkov:'
+          echo '* CKV_DOCKER_2 - Ensure that HEALTHCHECK instructions have been added to container images'
+          echo '* CKV_DOCKER_3 - Ensure that the image is not built from a local context'
+          echo
+          checkov -d ${{ env.DIR_DOCKERFILE }} \
+                  --framework dockerfile \
+                  --skip-check CKV_DOCKER_2,CKV_DOCKER_3 \
+                  -o cli -o sarif \
+                  --output-file-path ./results/results-dockerfile.sarif
+
+      - name: Exibir arquivos gerados em /results
+        if: always()
+        run: |
+          cd results
+          pwd
+          echo
+          echo
+          ls -l
+        
+      - name: Upload arquivo SARIF file
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ./results/results-dockerfile.sarif
+          category: sast-tools
+
   image-scanning:
     runs-on: ubuntu-latest
-    needs: dependency-scanning
+    needs: dockerfile-scanning
     if: always()
     
     steps:
@@ -162,7 +209,10 @@ jobs:
           sudo apt-get install -y trivy
 
       - name: Testar execução do Trivy
-        run: trivy
+        run: |
+          trivy --version
+          echo ''
+          trivy
 
       - name: Criar o diretório results
         run: mkdir -p results
