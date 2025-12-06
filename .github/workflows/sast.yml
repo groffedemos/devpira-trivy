@@ -68,11 +68,78 @@ jobs:
           sarif_file: ./results/results-secrets.sarif
           category: sast-tools
 
+  dependency-scanning:
+    runs-on: ubuntu-latest
+    needs: secrets_scanning
+    if: always()
+    
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Exibir o conteúdo do arquivo .csproj antes dos ajustes com sed
+        run: |
+          cd ${{ env.DIR_DOCKERFILE }}
+          cat ${{ env.PROJECT_FILE }}
+
+      - name: Configurar o arquivo .csproj
+        run: |
+          cd ${{ env.DIR_DOCKERFILE }}
+          if ! grep -q '<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>' "${{ env.PROJECT_FILE }}"; then
+              sed -i '/<PropertyGroup>/a \    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>' "${{ env.PROJECT_FILE }}"
+          fi
+        
+      - name: Exibir o conteúdo do arquivo .csproj após ajustes com sed
+        run: |
+          cd ${{ env.DIR_DOCKERFILE }}
+          cat ${{ env.PROJECT_FILE }}
+
+      - name: Restaurar dependências
+        run: |
+          cd ${{ env.DIR_DOCKERFILE }}
+          dotnet restore
+
+      - name: Instalar o Trivy
+        run: |
+          sudo apt-get install -y wget apt-transport-https gnupg
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+
+      - name: Testar execução do Trivy
+        run: trivy
+
+      - name: Criar o diretório results
+        run: mkdir -p results
+
+      - name: Executar o Trivy gerando SARIF
+        run: |
+          trivy fs --scanners vuln \
+            --exit-code 1 \
+            --format sarif \
+            --output ./results/trivy-scancode.sarif \
+            ${{ env.DIR_DOCKERFILE }}
+            
+      - name: Listar arquivos de resultado
+        run: |
+          cd results
+          pwd
+          echo
+          ls -lah
+        if: always()
+          
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ./results/trivy-scancode.sarif
+          category: trivy
+        if: always()
   
   tests:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    needs: secrets_scanning
+    needs: dependency-scanning
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
