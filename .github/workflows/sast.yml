@@ -79,24 +79,24 @@ jobs:
 
       - name: Exibir o conteúdo do arquivo .csproj antes dos ajustes com sed
         run: |
-          cd ${{ env.DIR_DOCKERFILE }}
+          cd ${{ env.DIR_PROJECT_FILE }}
           cat ${{ env.PROJECT_FILE }}
 
       - name: Configurar o arquivo .csproj
         run: |
-          cd ${{ env.DIR_DOCKERFILE }}
+          cd ${{ env.DIR_PROJECT_FILE }}
           if ! grep -q '<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>' "${{ env.PROJECT_FILE }}"; then
               sed -i '/<PropertyGroup>/a \    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>' "${{ env.PROJECT_FILE }}"
           fi
         
       - name: Exibir o conteúdo do arquivo .csproj após ajustes com sed
         run: |
-          cd ${{ env.DIR_DOCKERFILE }}
+          cd ${{ env.DIR_PROJECT_FILE }}
           cat ${{ env.PROJECT_FILE }}
 
       - name: Restaurar dependências
         run: |
-          cd ${{ env.DIR_DOCKERFILE }}
+          cd ${{ env.DIR_PROJECT_FILE }}
           dotnet restore
 
       - name: Instalar o Trivy
@@ -122,7 +122,7 @@ jobs:
             --exit-code 1 \
             --format sarif \
             --output ./results/trivy-scancode.sarif \
-            ${{ env.DIR_DOCKERFILE }}
+            ${{ env.DIR_PROJECT_FILE }}
             
       - name: Listar arquivos de resultado
         run: |
@@ -133,7 +133,7 @@ jobs:
         if: always()
           
       - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: ./results/trivy-scancode.sarif
           category: trivy
@@ -181,7 +181,7 @@ jobs:
         
       - name: Upload arquivo SARIF file
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: ./results/results-dockerfile.sarif
           category: sast-tools
@@ -234,7 +234,7 @@ jobs:
         if: always()
           
       - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: ./results/trivy-scanimage.sarif
           category: trivy
