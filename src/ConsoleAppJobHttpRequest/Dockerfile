@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0.306 AS build-env
+FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS build-env
 WORKDIR /app
 
 # Copiar csproj e restaurar dependencias
@@ -10,7 +10,7 @@ COPY . ./
 RUN dotnet publish -c Release -o out
 
 # Build da imagem
-FROM mcr.microsoft.com/dotnet/runtime:9.0.10
+FROM mcr.microsoft.com/dotnet/runtime:10.0.0
 WORKDIR /app
 COPY --from=build-env /app/out .
 ENTRYPOINT ["dotnet", "ConsoleAppJobHttpRequest.dll"]
