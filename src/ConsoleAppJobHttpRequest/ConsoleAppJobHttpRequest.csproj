@@ -11,10 +11,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.11" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.11" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
-    <!-- Remover as 2 referências a seguir -->
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="4.1.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.0.0-rc9.4" />
-    <!-- -->
   </ItemGroup>
 
 	<ItemGroup>
